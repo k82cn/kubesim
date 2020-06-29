@@ -1,2 +1,3 @@
-# vmark
-The benchmark tools of batch system
+# KubeSim
+
+A simulator of Kuberntes for batch and offline workload.
