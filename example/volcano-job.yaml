@@ -1,0 +1,37 @@
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: test-job
+  namespace: test
+spec:
+  minAvailable: 1
+  schedulerName: volcano
+  policies:
+    - event: PodEvicted
+      action: RestartJob
+  plugins:
+    ssh: []
+    env: []
+    svc: []
+  maxRetry: 5
+  queue: default
+  tasks:
+    - replicas: 1
+      name: "mork"
+      template:
+        metadata:
+          name: mork
+          labels:
+            simulation.runDuration: "10s"
+            simulation.terminalPhase: "Succeeded"
+        spec:
+          schedulerName: volcano
+          containers:
+            - image: busybox
+              imagePullPolicy: IfNotPresent
+              command: ['sh', '-c', 'sleep 3000']
+              name: sleeptask
+              resources:
+                requests:
+                  cpu: "300m"
+          restartPolicy: OnFailure
