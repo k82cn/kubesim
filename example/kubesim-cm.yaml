@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hollow-node
+  namespace: kubesim
+data:
+  config.yaml: |
+    nodeClasses:
+      - name: large
+        labels:
+          host.type: virtual
+        resources:
+          capacity:
+            cpu: "32"
+            memory: "128Gi"
+      - name: small
+        labels:
+          host.type: virtual
+        resources:
+          capacity:
+            cpu: "1"
+            memory: "4Gi"
