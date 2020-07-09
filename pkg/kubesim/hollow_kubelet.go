@@ -59,8 +59,8 @@ import (
 	"k8s.io/kubernetes/pkg/volume/util/subpath"
 	"k8s.io/kubernetes/test/utils"
 
-	containertest "volcano.sh/simulator/pkg/mock/kubelet/container/testing"
-	"volcano.sh/simulator/pkg/mock/volume/utils/hostutil"
+	containertest "github.com/openbsi/kubesim/pkg/mock/kubelet/container/testing"
+	"github.com/openbsi/kubesim/pkg/mock/volume/utils/hostutil"
 )
 
 // HollowKubelet struct for hollow kubelet

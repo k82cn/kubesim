@@ -45,14 +45,14 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	"k8s.io/kubernetes/pkg/master/ports"
 
-	simulatorconfig "volcano.sh/simulator/pkg/config"
-	"volcano.sh/simulator/pkg/kubesim"
-	cadvisortest "volcano.sh/simulator/pkg/mock/kubelet/cadvisor/testing"
-	"volcano.sh/simulator/pkg/mock/kubelet/remote"
-	fakeremote "volcano.sh/simulator/pkg/mock/kubelet/remote/fake"
-	fakeexec "volcano.sh/simulator/pkg/mock/util/exec/testing"
-	fakeiptables "volcano.sh/simulator/pkg/mock/util/iptables/testing"
-	fakesysctl "volcano.sh/simulator/pkg/mock/util/sysctl/testing"
+	simulatorconfig "github.com/openbsi/kubesim/pkg/config"
+	"github.com/openbsi/kubesim/pkg/kubesim"
+	cadvisortest "github.com/openbsi/kubesim/pkg/mock/kubelet/cadvisor/testing"
+	"github.com/openbsi/kubesim/pkg/mock/kubelet/remote"
+	fakeremote "github.com/openbsi/kubesim/pkg/mock/kubelet/remote/fake"
+	fakeexec "github.com/openbsi/kubesim/pkg/mock/util/exec/testing"
+	fakeiptables "github.com/openbsi/kubesim/pkg/mock/util/iptables/testing"
+	fakesysctl "github.com/openbsi/kubesim/pkg/mock/util/sysctl/testing"
 )
 
 type hollowNodeConfig struct {
