@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
@@ -101,9 +103,10 @@ type podSandBoxInfo struct {
 	StartAt        time.Time
 	PodDuration    time.Duration
 	PodTermination string
+	Request        corev1.ResourceList
 }
 
-func (pc *podSandBoxCache) addPodSandBox(podSandBoxID string, config *runtimeapi.PodSandboxConfig) error {
+func (pc *podSandBoxCache) addPodSandBox(podSandBoxID string, config *runtimeapi.PodSandboxConfig, request v1.ResourceList) error {
 	pc.Lock()
 	defer pc.Unlock()
 
@@ -116,6 +119,7 @@ func (pc *podSandBoxCache) addPodSandBox(podSandBoxID string, config *runtimeapi
 		StartAt:        time.Now(),
 		PodDuration:    time.Duration(0),
 		PodTermination: "",
+		Request:        request,
 	}
 	if v, ok := config.Labels["simulation.runDuration"]; ok {
 		d, err := time.ParseDuration(v)
