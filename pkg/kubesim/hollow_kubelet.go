@@ -59,6 +59,7 @@ import (
 	"k8s.io/kubernetes/pkg/volume/util/subpath"
 	"k8s.io/kubernetes/test/utils"
 
+	"github.com/openbsi/kubesim/pkg/metrics"
 	containertest "github.com/openbsi/kubesim/pkg/mock/kubelet/container/testing"
 	"github.com/openbsi/kubesim/pkg/mock/volume/utils/hostutil"
 )
@@ -68,6 +69,7 @@ type HollowKubelet struct {
 	KubeletFlags         *options.KubeletFlags
 	KubeletConfiguration *kubeletconfig.KubeletConfiguration
 	KubeletDeps          *kubelet.Dependencies
+	Sink                 metrics.Interface
 }
 
 func volumePlugins() []volume.VolumePlugin {
@@ -104,7 +106,8 @@ func NewHollowKubelet(
 	cadvisorInterface cadvisor.Interface,
 	imageService internalapi.ImageManagerService,
 	runtimeService internalapi.RuntimeService,
-	containerManager cm.ContainerManager) *HollowKubelet {
+	containerManager cm.ContainerManager,
+	sink metrics.Interface) *HollowKubelet {
 	d := &kubelet.Dependencies{
 		KubeClient:           client,
 		HeartbeatClient:      heartbeatClient,
@@ -126,6 +129,7 @@ func NewHollowKubelet(
 		KubeletFlags:         flags,
 		KubeletConfiguration: config,
 		KubeletDeps:          d,
+		Sink:                 sink,
 	}
 }
 
@@ -137,7 +141,26 @@ func (hk *HollowKubelet) Run() {
 	}, hk.KubeletDeps, false); err != nil {
 		klog.Fatalf("Failed to run HollowKubelet: %v. Exiting.", err)
 	}
+
+	hk.logStaticMetric()
+
 	select {}
+}
+
+func (hk *HollowKubelet) logStaticMetric() {
+	mi, _ := hk.KubeletDeps.CAdvisorInterface.MachineInfo()
+	nm := &metrics.NodeMetric{
+		MetricType: "static",
+		Capacity:   make(map[string]string),
+		SampleTime: time.Now(),
+	}
+	nm.Capacity["cpu"] = fmt.Sprintf("%d", mi.NumCores*1000)
+	nm.Capacity["memory"] = fmt.Sprintf("%d", mi.MemoryCapacity)
+	err := hk.Sink.LogNodeMetrics(nm)
+	if err != nil {
+		klog.Errorf("log node static metrics failed, %+v", err)
+	}
+
 }
 
 // HollowKubletOptions contains settable parameters for hollow kubelet.

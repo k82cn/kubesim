@@ -27,6 +27,7 @@ import (
 	"k8s.io/klog"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
@@ -35,6 +36,8 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/util"
 	"k8s.io/kubernetes/pkg/kubelet/util/logreduction"
 	utilexec "k8s.io/utils/exec"
+
+	"github.com/openbsi/kubesim/pkg/metrics"
 )
 
 // RemoteRuntimeService is a gRPC implementation of internalapi.RuntimeService.
@@ -45,6 +48,7 @@ type RemoteRuntimeService struct {
 	logReduction *logreduction.LogReduction
 	cache        *podSandBoxCache
 	client       *clientset.Clientset
+	sink         metrics.Interface
 }
 
 const (
@@ -53,7 +57,7 @@ const (
 )
 
 // NewRemoteRuntimeService creates a new internalapi.RuntimeService.
-func NewRemoteRuntimeService(endpoint string, connectionTimeout time.Duration, client *clientset.Clientset) (internalapi.RuntimeService, error) {
+func NewRemoteRuntimeService(endpoint string, connectionTimeout time.Duration, client *clientset.Clientset, sink metrics.Interface) (internalapi.RuntimeService, error) {
 	klog.V(3).Infof("Connecting to runtime service %s", endpoint)
 	addr, dialer, err := util.GetAddressAndDialer(endpoint)
 	if err != nil {
@@ -78,9 +82,11 @@ func NewRemoteRuntimeService(endpoint string, connectionTimeout time.Duration, c
 		logReduction:  logreduction.NewLogReduction(identicalErrorDelay),
 		cache:         pc,
 		client:        client,
+		sink:          sink,
 	}
 
 	go wait.Until(service.podHouseKeeping, time.Second, context.TODO().Done())
+	go wait.Until(service.allocatedResourcesHouseKeeping, 15*time.Second, context.TODO().Done())
 
 	return service, nil
 }
@@ -128,7 +134,7 @@ func (r *RemoteRuntimeService) RunPodSandbox(config *runtimeapi.PodSandboxConfig
 		return "", errors.New(errorMessage)
 	}
 
-	r.cache.addPodSandBox(resp.PodSandboxId, config)
+	r.cache.addPodSandBox(resp.PodSandboxId, config, r.getPodRequest(config.Metadata.Name, config.Metadata.Namespace))
 	return resp.PodSandboxId, nil
 }
 
@@ -530,6 +536,37 @@ func (r *RemoteRuntimeService) ReopenContainerLog(containerID string) error {
 	return nil
 }
 
+func (r *RemoteRuntimeService) getPodRequest(name, namespace string) v1.ResourceList {
+	request := v1.ResourceList{}
+
+	cpu := resource.MustParse("0")
+	memory := resource.MustParse("0")
+	cpuPtr := &cpu
+	memoryPtr := &memory
+
+	p, err := r.client.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		klog.Errorf("Failed to get pod %s/%s, %+v", namespace, name, err)
+		return nil
+	}
+	for _, c := range p.Spec.Containers {
+		for k, v := range c.Resources.Requests {
+			switch k {
+			case v1.ResourceCPU:
+				cpuPtr.Add(v)
+			case v1.ResourceMemory:
+				memoryPtr.Add(v)
+			default:
+				klog.V(3).Infof("unsupport resource %s", k)
+			}
+		}
+	}
+
+	request[v1.ResourceCPU] = cpu
+	request[v1.ResourceMemory] = memory
+	return request
+}
+
 // set pod ternimation status for simulation
 func (r *RemoteRuntimeService) podHouseKeeping() {
 	podSandbox := r.cache.snapshot()
@@ -590,4 +627,33 @@ func (r *RemoteRuntimeService) podHouseKeeping() {
 
 		r.cache.deletePodSandBox(id)
 	}
+}
+
+func (r *RemoteRuntimeService) allocatedResourcesHouseKeeping() {
+	cpu := resource.MustParse("0")
+	memory := resource.MustParse("0")
+	cpuTotal := &cpu
+	memoryTotal := &memory
+	podSandbox := r.cache.snapshot()
+	for _, sandbox := range podSandbox {
+		for k, v := range sandbox.Request {
+			switch k {
+			case v1.ResourceCPU:
+				cpuTotal.Add(v)
+			case v1.ResourceMemory:
+				memoryTotal.Add(v)
+			}
+		}
+	}
+
+	nm := &metrics.NodeMetric{
+		MetricType: "real",
+		SampleTime: time.Now(),
+		Capacity: map[string]string{
+			"cpu":    fmt.Sprintf("%d", cpuTotal.MilliValue()),
+			"memory": fmt.Sprintf("%d", memoryTotal.Value()),
+		},
+	}
+
+	r.sink.LogNodeMetrics(nm)
 }

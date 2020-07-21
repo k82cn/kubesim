@@ -33,9 +33,12 @@ spec:
           path: /var/log
       - name: no-serviceaccount-access-to-real-master
         emptyDir: {}
-      - name: host-resource
+      - name: kubesim-node
         configMap:
-          name: hollow-node
+          name: kubesim-node-cm
+      - name: kubesim-sink
+        configMap:
+          name: kubesim-sink-cm
       containers:
       - name: hollow-kubelet
         image: volcanosh/vc-kubesim:latest
@@ -64,8 +67,9 @@ spec:
           "--logtostderr=false",
           "--alsologtostderr",
           "--v=2",
-          "--node-resource-file=/fake-resources/config.yaml",
-          "--node-resource-name=large"
+          "--node-resource-file=/kubesim-node/config.yaml",
+          "--node-resource-name=large",
+          "--sink-config=/kubesim-sink/config.yaml"
         ]
         volumeMounts:
         - name: kubeconfig-volume
@@ -73,8 +77,10 @@ spec:
           readOnly: true
         - name: logs-volume
           mountPath: /var/log
-        - name: host-resource
-          mountPath: /fake-resources
+        - name: kubesim-node
+          mountPath: /kubesim-node
+        - name: kubesim-sink
+          mountPath: /kubesim-sink
         resources:
           requests:
             cpu: 100m

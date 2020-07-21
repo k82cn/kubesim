@@ -47,6 +47,8 @@ import (
 
 	simulatorconfig "github.com/openbsi/kubesim/pkg/config"
 	"github.com/openbsi/kubesim/pkg/kubesim"
+	"github.com/openbsi/kubesim/pkg/metrics"
+	metricconfig "github.com/openbsi/kubesim/pkg/metrics/config"
 	cadvisortest "github.com/openbsi/kubesim/pkg/mock/kubelet/cadvisor/testing"
 	"github.com/openbsi/kubesim/pkg/mock/kubelet/remote"
 	fakeremote "github.com/openbsi/kubesim/pkg/mock/kubelet/remote/fake"
@@ -69,6 +71,7 @@ type hollowNodeConfig struct {
 	NodeLabels           map[string]string
 	NodeResourceFile     string
 	NodeResourceName     string
+	SinkConfig           string
 }
 
 const (
@@ -95,6 +98,7 @@ func (c *hollowNodeConfig) addFlags(fs *pflag.FlagSet) {
 	fs.Var(&bindableNodeLabels, "node-labels", "Additional node labels")
 	fs.StringVar(&c.NodeResourceFile, "node-resource-file", "", "File path of node resource configuration.")
 	fs.StringVar(&c.NodeResourceName, "node-resource-name", "", "Specifies into which resource type in node-resource-file should be used.")
+	fs.StringVar(&c.SinkConfig, "sink-config", "", "File path of metrics sink configuration.")
 }
 
 func (c *hollowNodeConfig) createClientConfigFromFile() (*restclient.Config, error) {
@@ -197,10 +201,27 @@ func run(config *hollowNodeConfig) {
 			klog.Fatalf("Failed to create a ClientSet: %v. Exiting.", err)
 		}
 
+		// create sink for log metrics
+		sinkConfig, _ := metricconfig.SinkConfigFromYaml(config.SinkConfig)
+		var sink metrics.Interface
+		if sinkConfig != nil {
+			sink = metrics.ManufactureSink(sinkConfig, config.NodeName)
+		} else {
+			sink = metrics.ManufactureSink(nil, "")
+		}
+		if err = sink.Initialization(); err != nil {
+			klog.Errorf("Failed to initialize sink, %+v", err)
+		}
+
 		// load fake node resource capacity from yaml file
 		nc, _ := simulatorconfig.NodeConfigFromYaml(config.NodeResourceFile, config.NodeResourceName)
 		cadvisorInterface := cadvisortest.New(config.NodeName, nc)
 		containerManager := cm.NewStubContainerManager()
+
+		// update node labels
+		for k, v := range nc.Labels {
+			f.NodeLabels[k] = v
+		}
 
 		endpoint, err := fakeremote.GenerateEndpoint()
 		if err != nil {
@@ -211,7 +232,7 @@ func run(config *hollowNodeConfig) {
 			klog.Fatalf("Failed to start fake runtime %v.", err)
 		}
 		defer fakeRemoteRuntime.Stop()
-		runtimeService, err := remote.NewRemoteRuntimeService(endpoint, 15*time.Second, client)
+		runtimeService, err := remote.NewRemoteRuntimeService(endpoint, 15*time.Second, client, sink)
 		if err != nil {
 			klog.Fatalf("Failed to init runtime service %v.", err)
 		}
@@ -224,6 +245,7 @@ func run(config *hollowNodeConfig) {
 			fakeRemoteRuntime.ImageService,
 			runtimeService,
 			containerManager,
+			sink,
 		)
 		hollowKubelet.Run()
 	}
