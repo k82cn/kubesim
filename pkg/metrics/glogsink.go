@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"github.com/openbsi/kubesim/pkg/metrics/config"
+	"volcano.sh/kubesim/pkg/metrics/config"
 	"k8s.io/klog"
 )
 

@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/openbsi/kubesim/pkg/metrics/config"
+	"volcano.sh/kubesim/pkg/metrics/config"
 )
 
 // Interface is the interface used to output cluster metrics
