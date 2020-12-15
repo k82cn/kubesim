@@ -45,16 +45,16 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	"k8s.io/kubernetes/pkg/master/ports"
 
-	simulatorconfig "volcano.sh/kubesim/pkg/config"
-	"volcano.sh/kubesim/pkg/kubesim"
-	"volcano.sh/kubesim/pkg/metrics"
-	metricconfig "volcano.sh/kubesim/pkg/metrics/config"
-	cadvisortest "volcano.sh/kubesim/pkg/mock/kubelet/cadvisor/testing"
-	"volcano.sh/kubesim/pkg/mock/kubelet/remote"
-	fakeremote "volcano.sh/kubesim/pkg/mock/kubelet/remote/fake"
-	fakeexec "volcano.sh/kubesim/pkg/mock/util/exec/testing"
-	fakeiptables "volcano.sh/kubesim/pkg/mock/util/iptables/testing"
-	fakesysctl "volcano.sh/kubesim/pkg/mock/util/sysctl/testing"
+	simulatorconfig "github.com/volcano-sh/kubesim/pkg/config"
+	"github.com/volcano-sh/kubesim/pkg/kubesim"
+	"github.com/volcano-sh/kubesim/pkg/metrics"
+	metricconfig "github.com/volcano-sh/kubesim/pkg/metrics/config"
+	cadvisortest "github.com/volcano-sh/kubesim/pkg/mock/kubelet/cadvisor/testing"
+	"github.com/volcano-sh/kubesim/pkg/mock/kubelet/remote"
+	fakeremote "github.com/volcano-sh/kubesim/pkg/mock/kubelet/remote/fake"
+	fakeexec "github.com/volcano-sh/kubesim/pkg/mock/util/exec/testing"
+	fakeiptables "github.com/volcano-sh/kubesim/pkg/mock/util/iptables/testing"
+	fakesysctl "github.com/volcano-sh/kubesim/pkg/mock/util/sysctl/testing"
 )
 
 type hollowNodeConfig struct {
