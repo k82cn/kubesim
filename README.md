@@ -2,7 +2,7 @@
 
 A simulator of Kubernetes for batch and offline workload.
 
-Kubesim is based on kubemark on kubernetes `release-1.18`, commit `e38139724f8f0086be9db575d8fe5211c653dc8f`
+Kubesim is based on kubemark on kubernetes `release-1.18`, tag `v1.18.6`, commit  `dff82dc0de47299ab66c83c626e08b245ab19037`
 
 ## Quick start
 1. create `kubesim` namespace

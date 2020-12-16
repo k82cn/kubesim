@@ -9,7 +9,7 @@ import (
 
 	"k8s.io/klog"
 
-	"github.com/volcano-sh/kubesim/pkg/metrics/config"
+	"volcano.sh/kubesim/pkg/metrics/config"
 )
 
 // MysqlSink implements metrics.Interface

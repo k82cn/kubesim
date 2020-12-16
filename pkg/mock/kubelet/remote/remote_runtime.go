@@ -37,7 +37,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/util/logreduction"
 	utilexec "k8s.io/utils/exec"
 
-	"github.com/volcano-sh/kubesim/pkg/metrics"
+	"volcano.sh/kubesim/pkg/metrics"
 )
 
 // RemoteRuntimeService is a gRPC implementation of internalapi.RuntimeService.

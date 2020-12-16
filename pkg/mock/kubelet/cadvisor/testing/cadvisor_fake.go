@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/kubelet/cadvisor"
 
-	simulatorconfig "github.com/volcano-sh/kubesim/pkg/config"
+	simulatorconfig "volcano.sh/kubesim/pkg/config"
 )
 
 // New new fake cadvisor.Interface
