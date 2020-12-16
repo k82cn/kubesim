@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"volcano.sh/kubesim/pkg/metrics/config"
 	"k8s.io/klog"
+	"volcano.sh/kubesim/pkg/metrics/config"
 )
 
 // GlogSink implements metrics.Interface
