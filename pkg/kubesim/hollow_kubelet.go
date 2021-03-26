@@ -18,6 +18,7 @@ package kubesim
 
 import (
 	"fmt"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"time"
 
 	"k8s.io/klog"
@@ -171,6 +172,7 @@ type HollowKubletOptions struct {
 	MaxPods             int
 	PodsPerCore         int
 	NodeLabels          map[string]string
+	RegisterWithTaints  []core.Taint
 }
 
 // GetHollowKubeletConfig builds a KubeletConfiguration for the HollowKubelet,
@@ -192,6 +194,7 @@ func GetHollowKubeletConfig(opt *HollowKubletOptions) (*options.KubeletFlags, *k
 	f.ContainerRuntimeOptions.ContainerRuntime = kubetypes.RemoteContainerRuntime
 	f.RegisterNode = true
 	f.RegisterSchedulable = true
+	f.RegisterWithTaints = opt.RegisterWithTaints
 	f.ProviderID = fmt.Sprintf("kubemark://%v", opt.NodeName)
 
 	// Config struct

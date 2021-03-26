@@ -40,6 +40,7 @@ import (
 	_ "k8s.io/component-base/metrics/prometheus/version"    // for version metric registration
 	"k8s.io/component-base/version"
 	"k8s.io/component-base/version/verflag"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 
 	"k8s.io/kubernetes/pkg/kubelet/cm"
@@ -54,6 +55,7 @@ import (
 	fakeremote "volcano.sh/kubesim/pkg/mock/kubelet/remote/fake"
 	fakeexec "volcano.sh/kubesim/pkg/mock/util/exec/testing"
 	fakeiptables "volcano.sh/kubesim/pkg/mock/util/iptables/testing"
+	utiltaints "k8s.io/kubernetes/pkg/util/taints"
 	fakesysctl "volcano.sh/kubesim/pkg/mock/util/sysctl/testing"
 )
 
@@ -72,6 +74,7 @@ type hollowNodeConfig struct {
 	NodeResourceFile     string
 	NodeResourceName     string
 	SinkConfig           string
+	RegisterWithTaints   []core.Taint
 }
 
 const (
@@ -99,6 +102,7 @@ func (c *hollowNodeConfig) addFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.NodeResourceFile, "node-resource-file", "", "File path of node resource configuration.")
 	fs.StringVar(&c.NodeResourceName, "node-resource-name", "", "Specifies into which resource type in node-resource-file should be used.")
 	fs.StringVar(&c.SinkConfig, "sink-config", "", "File path of metrics sink configuration.")
+	fs.Var(utiltaints.NewTaintsVar(&c.RegisterWithTaints), "register-with-taints", "Register the node with the given list of taints (comma separated \"<key>=<value>:<effect>\"). No-op if register-node is false.")
 }
 
 func (c *hollowNodeConfig) createClientConfigFromFile() (*restclient.Config, error) {
@@ -124,6 +128,7 @@ func (c *hollowNodeConfig) createHollowKubeletOptions() *kubesim.HollowKubletOpt
 		MaxPods:             maxPods,
 		PodsPerCore:         podsPerCore,
 		NodeLabels:          c.NodeLabels,
+		RegisterWithTaints:  c.RegisterWithTaints,
 	}
 }
 
